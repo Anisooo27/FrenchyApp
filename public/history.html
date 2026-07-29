@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frenchy — Historique des ventes</title>
+  <meta name="description" content="Historique des ventes du système de caisse Frenchy">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="products.css">
+</head>
+<body data-page="manager">
+  <div class="app">
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo">🥐</span>
+        <h1 class="header__title">Frenchy</h1>
+        <span class="header__subtitle">Historique des ventes</span>
+      </div>
+      <div class="header__actions">
+        <a href="/cashiers.html" class="btn btn--ghost">👥 Caissiers</a>
+        <a href="/products.html" class="btn btn--ghost">📦 Produits</a>
+        <a href="/" class="btn btn--ghost" id="btn-back-pos">🏪 Retour à la caisse</a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <!-- ===== DAY LIST ===== -->
+      <section class="form-panel">
+        <h2 class="form-panel__title">📅 Jours</h2>
+        <div class="day-list" id="day-list">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+
+      <!-- ===== DAY DETAIL ===== -->
+      <section class="table-panel">
+        <div class="table-panel__header">
+          <h2 id="history-title">Aujourd'hui</h2>
+        </div>
+        <div class="table-wrapper" id="history-detail" style="padding: 20px;">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="auth.js"></script>
+  <script src="history-app.js"></script>
+</body>
+</html>

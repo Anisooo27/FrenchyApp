@@ -17,18 +17,14 @@ const $cartTotal      = document.getElementById('cart-total');
 const $btnClear       = document.getElementById('btn-clear');
 const $btnPayCash     = document.getElementById('btn-pay-cash');
 const $btnPayCard     = document.getElementById('btn-pay-card');
-const $btnSummary     = document.getElementById('btn-summary');
 const $clock          = document.getElementById('clock');
 
-// Modals
+// Modal
 const $modalOverlay   = document.getElementById('modal-overlay');
 const $modalTitle     = document.getElementById('modal-title');
 const $modalBody      = document.getElementById('modal-body');
 const $modalCancel    = document.getElementById('modal-cancel');
 const $modalConfirm   = document.getElementById('modal-confirm');
-const $summaryOverlay = document.getElementById('summary-overlay');
-const $summaryBody    = document.getElementById('summary-body');
-const $summaryClose   = document.getElementById('summary-close');
 
 // ===== HELPERS =====
 const fmt = (n) => `${Math.round(n).toLocaleString('fr-FR')} DA`;
@@ -81,17 +77,6 @@ async function submitOrder(paymentMethod) {
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || 'Impossible d\'enregistrer la commande');
   return json;
-}
-
-async function fetchTodaySummary() {
-  let res;
-  try {
-    res = await fetch('/api/orders/today');
-  } catch (err) {
-    throw new Error('Serveur injoignable. Vérifiez que Frenchy POS est bien démarré.');
-  }
-  if (!res.ok) throw new Error('Impossible de charger le résumé du jour');
-  return res.json();
 }
 
 function renderLoadError() {
@@ -333,65 +318,14 @@ function showSuccess(order) {
   setTimeout(() => overlay.remove(), 1800);
 }
 
-// ===== SUMMARY =====
-async function openSummary() {
-  let data;
-  try {
-    data = await fetchTodaySummary();
-  } catch (err) {
-    showToast(err.message || 'Impossible de charger le résumé du jour');
-    return;
-  }
-  const { summary, orders } = data;
-
-  $summaryBody.innerHTML = `
-    <div class="summary-grid">
-      <div class="summary-card">
-        <div class="summary-card__value">${summary.order_count}</div>
-        <div class="summary-card__label">Commandes</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card__value">${fmt(summary.total_revenue)}</div>
-        <div class="summary-card__label">Chiffre d'affaires</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card__value">${fmt(summary.cash_total)}</div>
-        <div class="summary-card__label">Espèces</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-card__value">${fmt(summary.card_total)}</div>
-        <div class="summary-card__label">Carte</div>
-      </div>
-    </div>
-    <h4 style="margin-bottom:10px; font-size:14px; color:var(--color-text-dim);">Historique</h4>
-    <div class="summary-orders">
-      ${orders.length === 0
-        ? '<p style="color:var(--color-text-dim); text-align:center; padding:20px;">Aucune vente aujourd\'hui</p>'
-        : orders.map(o => `
-          <div class="summary-order-row">
-            <span class="summary-order-row__time">${new Date(o.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>
-            <span class="summary-order-row__method">${o.payment_method === 'cash' ? '💵' : '💳'} ${o.payment_method}</span>
-            <span class="summary-order-row__total">${fmt(o.total)}</span>
-          </div>
-        `).join('')
-      }
-    </div>
-  `;
-
-  $summaryOverlay.hidden = false;
-}
-
 // ===== EVENT LISTENERS =====
 $btnClear.addEventListener('click', clearCart);
 $btnPayCash.addEventListener('click', () => openPaymentModal('cash'));
 $btnPayCard.addEventListener('click', () => openPaymentModal('card'));
 $modalCancel.addEventListener('click', closeModal);
-$btnSummary.addEventListener('click', openSummary);
-$summaryClose.addEventListener('click', () => { $summaryOverlay.hidden = true; });
 
-// Close modals on overlay click
+// Close modal on overlay click
 $modalOverlay.addEventListener('click', (e) => { if (e.target === $modalOverlay) closeModal(); });
-$summaryOverlay.addEventListener('click', (e) => { if (e.target === $summaryOverlay) $summaryOverlay.hidden = true; });
 
 // ===== INIT =====
 // Held back until auth.js confirms the cashier is logged in with an open shift.

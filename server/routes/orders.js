@@ -3,6 +3,7 @@ const { getDb } = require('../db');
 const { requireAuth, requireManager } = require('../middleware/auth');
 
 const router = express.Router();
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 // POST /api/orders — create a new order
 router.post('/', requireAuth, (req, res, next) => {
@@ -80,10 +81,19 @@ router.post('/', requireAuth, (req, res, next) => {
   }
 });
 
-// GET /api/orders/today — sales summary for today (all cashiers)
-router.get('/today', requireManager, (req, res, next) => {
+// GET /api/orders/history?date=YYYY-MM-DD — sales for a given day (all cashiers), defaults to today
+router.get('/history', requireManager, (req, res, next) => {
   try {
+    const date = req.query.date || null;
+    if (date && !DATE_REGEX.test(date)) {
+      return res.status(400).json({ error: 'Format de date invalide (attendu AAAA-MM-JJ)' });
+    }
+
     const db = getDb();
+    // dateExpr is never derived from user input directly — it's a fixed SQL
+    // fragment chosen by this branch, with the actual date value bound below.
+    const dateExpr = date ? '?' : "date('now','localtime')";
+    const params = date ? [date] : [];
 
     const summary = db.prepare(`
       SELECT
@@ -92,16 +102,51 @@ router.get('/today', requireManager, (req, res, next) => {
         COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) AS cash_total,
         COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total ELSE 0 END), 0) AS card_total
       FROM orders
-      WHERE date(created_at) = date('now','localtime')
-    `).get();
+      WHERE date(created_at) = ${dateExpr}
+    `).get(...params);
+
+    const byCashier = db.prepare(`
+      SELECT
+        c.id   AS cashier_id,
+        c.name AS cashier_name,
+        COUNT(*) AS order_count,
+        COALESCE(SUM(o.total), 0) AS total_revenue
+      FROM orders o
+      LEFT JOIN cashiers c ON c.id = o.cashier_id
+      WHERE date(o.created_at) = ${dateExpr}
+      GROUP BY o.cashier_id
+      ORDER BY total_revenue DESC
+    `).all(...params);
 
     const orders = db.prepare(`
-      SELECT * FROM orders
-      WHERE date(created_at) = date('now','localtime')
-      ORDER BY created_at DESC
-    `).all();
+      SELECT o.*, c.name AS cashier_name
+      FROM orders o
+      LEFT JOIN cashiers c ON c.id = o.cashier_id
+      WHERE date(o.created_at) = ${dateExpr}
+      ORDER BY o.created_at DESC
+    `).all(...params);
 
-    res.json({ summary, orders });
+    res.json({ date: date || null, summary, byCashier, orders });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/orders/days — list of past days that have sales, most recent first
+router.get('/days', requireManager, (req, res, next) => {
+  try {
+    const db = getDb();
+    const days = db.prepare(`
+      SELECT
+        date(created_at) AS date,
+        COUNT(*) AS order_count,
+        COALESCE(SUM(total), 0) AS total_revenue
+      FROM orders
+      GROUP BY date(created_at)
+      ORDER BY date DESC
+      LIMIT 90
+    `).all();
+    res.json(days);
   } catch (err) {
     next(err);
   }
