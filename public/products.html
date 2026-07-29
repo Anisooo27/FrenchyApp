@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frenchy — Gestion des produits</title>
+  <meta name="description" content="Gestion des produits du système de caisse Frenchy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="products.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo">🥐</span>
+        <h1 class="header__title">Frenchy</h1>
+        <span class="header__subtitle">Gestion des produits</span>
+      </div>
+      <div class="header__actions">
+        <a href="/" class="btn btn--ghost" id="btn-back-pos">🏪 Retour à la caisse</a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <!-- ===== ADD / EDIT FORM ===== -->
+      <section class="form-panel">
+        <h2 class="form-panel__title" id="form-title">➕ Ajouter un produit</h2>
+        <form id="product-form" class="product-form" novalidate>
+          <input type="hidden" id="edit-id" value="">
+
+          <div class="form-group">
+            <label for="input-name">Nom du produit</label>
+            <input type="text" id="input-name" placeholder="ex: Croissant" required>
+            <span class="form-error" id="error-name"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="input-price">Prix (€)</label>
+              <input type="number" id="input-price" step="0.01" min="0.01" placeholder="0,00" required>
+              <span class="form-error" id="error-price"></span>
+            </div>
+            <div class="form-group">
+              <label for="input-category">Catégorie</label>
+              <input type="text" id="input-category" placeholder="ex: Viennoiserie" list="category-list" required>
+              <datalist id="category-list"></datalist>
+              <span class="form-error" id="error-category"></span>
+            </div>
+          </div>
+
+          <div class="form-error form-error--global" id="error-global"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" id="btn-submit">
+              <span id="btn-submit-text">Ajouter</span>
+            </button>
+            <button type="button" class="btn btn--ghost" id="btn-cancel" hidden>Annuler</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== PRODUCT TABLE ===== -->
+      <section class="table-panel">
+        <div class="table-panel__header">
+          <h2>📋 Liste des produits</h2>
+          <div class="table-panel__search">
+            <input type="text" id="search-input" placeholder="🔍 Rechercher un produit…">
+          </div>
+          <span class="product-count" id="product-count">0 produits</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="product-table" id="product-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-name sortable" data-sort="name">Nom ↕</th>
+                <th class="col-price sortable" data-sort="price">Prix ↕</th>
+                <th class="col-category sortable" data-sort="category">Catégorie ↕</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="product-tbody">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== DELETE CONFIRM MODAL ===== -->
+  <div class="modal-overlay" id="delete-overlay" hidden>
+    <div class="modal">
+      <h3 class="modal__title">🗑️ Supprimer ce produit ?</h3>
+      <div class="modal__body">
+        <p id="delete-message">Êtes-vous sûr de vouloir supprimer ce produit ?</p>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" id="delete-cancel">Annuler</button>
+        <button class="btn btn--danger-fill" id="delete-confirm">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="products-app.js"></script>
+</body>
+</html>

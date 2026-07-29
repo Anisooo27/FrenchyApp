@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frenchy — Caisse</title>
+  <meta name="description" content="Système de caisse Frenchy POS">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo">🥐</span>
+        <h1 class="header__title">Frenchy</h1>
+      </div>
+      <div class="header__actions">
+        <a href="/products.html" class="btn btn--ghost">📦 Produits</a>
+        <button id="btn-summary" class="btn btn--ghost">📊 Résumé du jour</button>
+        <span class="header__clock" id="clock"></span>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- ===== LEFT: PRODUCTS ===== -->
+      <section class="products-panel">
+        <div class="products-panel__header">
+          <h2>Produits</h2>
+          <div class="category-filters" id="category-filters">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+        <div class="product-grid" id="product-grid">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+
+      <!-- ===== RIGHT: CART ===== -->
+      <section class="cart-panel">
+        <h2 class="cart-panel__title">🛒 Panier</h2>
+        <div class="cart-items" id="cart-items">
+          <p class="cart-empty" id="cart-empty">Le panier est vide</p>
+        </div>
+        <div class="cart-footer">
+          <div class="cart-total">
+            <span>Total</span>
+            <span class="cart-total__amount" id="cart-total">0,00 €</span>
+          </div>
+          <div class="cart-actions">
+            <button id="btn-clear" class="btn btn--danger" disabled>Vider</button>
+            <button id="btn-pay-cash" class="btn btn--primary" disabled>💵 Espèces</button>
+            <button id="btn-pay-card" class="btn btn--accent" disabled>💳 Carte</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== PAYMENT MODAL ===== -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" id="payment-modal">
+      <h3 class="modal__title" id="modal-title">Paiement</h3>
+      <div class="modal__body" id="modal-body">
+        <!-- Content set by JS -->
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" id="modal-cancel">Annuler</button>
+        <button class="btn btn--primary" id="modal-confirm">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SUMMARY MODAL ===== -->
+  <div class="modal-overlay" id="summary-overlay" hidden>
+    <div class="modal modal--wide" id="summary-modal">
+      <h3 class="modal__title">📊 Résumé des ventes du jour</h3>
+      <div class="modal__body" id="summary-body">
+        <!-- Content set by JS -->
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--primary" id="summary-close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
