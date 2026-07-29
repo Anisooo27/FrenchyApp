@@ -38,7 +38,7 @@ const $deleteConfirm = document.getElementById('delete-confirm');
 const $toastContainer = document.getElementById('toast-container');
 
 // ===== HELPERS =====
-const fmt = (n) => Number(n).toFixed(2).replace('.', ',') + ' €';
+const fmt = (n) => `${Math.round(Number(n)).toLocaleString('fr-FR')} DA`;
 
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -415,4 +415,5 @@ $inputCategory.addEventListener('input', () => {
 });
 
 // ===== INIT =====
-fetchProducts();
+// Held back until auth.js confirms the logged-in cashier is a manager.
+document.addEventListener('auth:ready', fetchProducts);

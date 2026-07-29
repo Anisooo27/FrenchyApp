@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frenchy — Gestion des caissiers</title>
+  <meta name="description" content="Gestion des comptes caissiers du système de caisse Frenchy">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="products.css">
+</head>
+<body data-page="manager">
+  <div class="app">
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="header__brand">
+        <span class="header__logo">🥐</span>
+        <h1 class="header__title">Frenchy</h1>
+        <span class="header__subtitle">Gestion des caissiers</span>
+      </div>
+      <div class="header__actions">
+        <a href="/products.html" class="btn btn--ghost">📦 Produits</a>
+        <a href="/" class="btn btn--ghost" id="btn-back-pos">🏪 Retour à la caisse</a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <!-- ===== ADD / EDIT FORM ===== -->
+      <section class="form-panel">
+        <h2 class="form-panel__title" id="form-title">➕ Ajouter un caissier</h2>
+        <form id="cashier-form" class="product-form" novalidate>
+          <input type="hidden" id="edit-id" value="">
+
+          <div class="form-group">
+            <label for="input-name">Nom</label>
+            <input type="text" id="input-name" placeholder="ex: Sara" required>
+            <span class="form-error" id="error-name"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="input-role">Rôle</label>
+              <select id="input-role">
+                <option value="cashier">Caissier</option>
+                <option value="manager">Gérant</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input-pin">Code PIN (4 chiffres)</label>
+              <input type="password" id="input-pin" inputmode="numeric" maxlength="4" placeholder="••••">
+              <span class="form-error" id="error-pin"></span>
+              <span class="form-hint" id="pin-hint" hidden>Laisser vide pour garder le PIN actuel</span>
+            </div>
+          </div>
+
+          <div class="form-error form-error--global" id="error-global"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary" id="btn-submit">
+              <span id="btn-submit-text">Ajouter</span>
+            </button>
+            <button type="button" class="btn btn--ghost" id="btn-cancel" hidden>Annuler</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ===== CASHIER TABLE ===== -->
+      <section class="table-panel">
+        <div class="table-panel__header">
+          <h2>📋 Liste des caissiers</h2>
+          <span class="product-count" id="cashier-count">0 comptes</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="product-table" id="cashier-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th>Nom</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cashier-tbody">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="auth.js"></script>
+  <script src="cashiers-app.js"></script>
+</body>
+</html>

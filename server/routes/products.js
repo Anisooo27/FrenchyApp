@@ -1,5 +1,6 @@
 const express = require('express');
 const { getDb } = require('../db');
+const { requireAuth, requireManager } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ function validateProduct({ name, price, category }, partial = false) {
 }
 
 // GET /api/products — list all products
-router.get('/', (req, res, next) => {
+router.get('/', requireAuth, (req, res, next) => {
   try {
     const db = getDb();
     const products = db.prepare('SELECT * FROM products ORDER BY category, name').all();
@@ -43,7 +44,7 @@ router.get('/', (req, res, next) => {
 });
 
 // GET /api/products/:id — get one product
-router.get('/:id', (req, res, next) => {
+router.get('/:id', requireAuth, (req, res, next) => {
   try {
     const db = getDb();
     const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
@@ -55,7 +56,7 @@ router.get('/:id', (req, res, next) => {
 });
 
 // POST /api/products — create a product
-router.post('/', (req, res, next) => {
+router.post('/', requireManager, (req, res, next) => {
   try {
     const { name, price, category } = req.body || {};
     const errors = validateProduct({ name, price, category });
@@ -66,7 +67,7 @@ router.post('/', (req, res, next) => {
     const db = getDb();
     const cleanName = name.trim();
     const cleanCategory = category.trim();
-    const cleanPrice = Math.round(Number(price) * 100) / 100;
+    const cleanPrice = Math.round(Number(price));
 
     const info = db.prepare(
       'INSERT INTO products (name, price, category) VALUES (?, ?, ?)'
@@ -79,7 +80,7 @@ router.post('/', (req, res, next) => {
 });
 
 // PUT /api/products/:id — update a product
-router.put('/:id', (req, res, next) => {
+router.put('/:id', requireManager, (req, res, next) => {
   try {
     const { name, price, category } = req.body || {};
     const db = getDb();
@@ -93,7 +94,7 @@ router.put('/:id', (req, res, next) => {
     }
 
     const finalName     = name     !== undefined ? name.trim()                         : existing.name;
-    const finalPrice    = price    !== undefined ? Math.round(Number(price) * 100) / 100 : existing.price;
+    const finalPrice    = price    !== undefined ? Math.round(Number(price)) : existing.price;
     const finalCategory = category !== undefined ? category.trim()                      : existing.category;
 
     db.prepare(
@@ -107,7 +108,7 @@ router.put('/:id', (req, res, next) => {
 });
 
 // DELETE /api/products/:id — delete a product
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', requireManager, (req, res, next) => {
   try {
     const db = getDb();
     const info = db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);

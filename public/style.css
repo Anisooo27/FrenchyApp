@@ -750,6 +750,240 @@ body {
   max-width: 320px;
 }
 
+/* ===== AUTH OVERLAY ===== */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+  text-align: center;
+  position: relative;
+}
+
+.auth-logo {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.auth-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: var(--color-text-dim);
+  margin-bottom: 20px;
+}
+
+.auth-loading {
+  color: var(--color-text-dim);
+}
+
+.auth-screen form {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-screen label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-dim);
+  margin-bottom: 6px;
+}
+
+.auth-screen input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color var(--transition);
+  letter-spacing: 2px;
+}
+
+.auth-screen input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-glow);
+}
+
+.auth-error {
+  color: var(--color-danger);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 18px;
+  text-align: center;
+}
+
+.auth-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.auth-back:hover {
+  color: var(--color-text);
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 14px;
+  text-decoration: underline;
+}
+.auth-link:hover {
+  color: var(--color-text);
+}
+
+/* Cashier picker */
+.cashier-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cashier-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.cashier-btn:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.cashier-btn__role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* PIN pad */
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  transition: all var(--transition);
+}
+
+.pin-dot.filled {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pin-key {
+  padding: 16px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.pin-key:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+.pin-key:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.pin-key--empty {
+  visibility: hidden;
+}
+
+/* Account chip (header) */
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-chip__name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-chip__role {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dim);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.btn--sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  flex: none;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .main {

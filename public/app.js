@@ -31,7 +31,7 @@ const $summaryBody    = document.getElementById('summary-body');
 const $summaryClose   = document.getElementById('summary-close');
 
 // ===== HELPERS =====
-const fmt = (n) => n.toFixed(2).replace('.', ',') + ' €';
+const fmt = (n) => `${Math.round(n).toLocaleString('fr-FR')} DA`;
 const $toastContainer = document.getElementById('toast-container');
 
 function showToast(message, type = 'error') {
@@ -188,7 +188,7 @@ function clearCart() {
 }
 
 function getTotal() {
-  return Math.round(cart.reduce((sum, c) => sum + c.price * c.quantity, 0) * 100) / 100;
+  return Math.round(cart.reduce((sum, c) => sum + c.price * c.quantity, 0));
 }
 
 function renderCart() {
@@ -201,7 +201,7 @@ function renderCart() {
   if (!hasItems) {
     // Clear all cart items but keep the empty message
     $cartItems.querySelectorAll('.cart-item').forEach(el => el.remove());
-    $cartTotal.textContent = '0,00 €';
+    $cartTotal.textContent = fmt(0);
     return;
   }
 
@@ -259,10 +259,10 @@ function openPaymentModal(method) {
     $modalBody.innerHTML = `
       <p style="font-size: 15px; margin-bottom: 12px;">Total : <strong>${fmt(total)}</strong></p>
       <label for="cash-given">Montant reçu</label>
-      <input type="number" id="cash-given" step="0.01" min="${total}" placeholder="0,00" autofocus>
+      <input type="number" id="cash-given" step="1" min="${total}" placeholder="0" autofocus>
       <div class="change-display" id="change-display" style="display:none">
         <div class="change-display__label">Monnaie à rendre</div>
-        <div class="change-display__amount" id="change-amount">0,00 €</div>
+        <div class="change-display__amount" id="change-amount">0 DA</div>
       </div>
     `;
 
@@ -394,4 +394,5 @@ $modalOverlay.addEventListener('click', (e) => { if (e.target === $modalOverlay)
 $summaryOverlay.addEventListener('click', (e) => { if (e.target === $summaryOverlay) $summaryOverlay.hidden = true; });
 
 // ===== INIT =====
-fetchProducts();
+// Held back until auth.js confirms the cashier is logged in with an open shift.
+document.addEventListener('auth:ready', fetchProducts);

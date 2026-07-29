@@ -7,7 +7,7 @@
   <meta name="description" content="Système de caisse Frenchy POS">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-page="pos">
   <div class="app">
     <!-- ===== HEADER ===== -->
     <header class="header">
@@ -16,8 +16,9 @@
         <h1 class="header__title">Frenchy</h1>
       </div>
       <div class="header__actions">
-        <a href="/products.html" class="btn btn--ghost">📦 Produits</a>
-        <button id="btn-summary" class="btn btn--ghost">📊 Résumé du jour</button>
+        <a href="/cashiers.html" class="btn btn--ghost" data-role="manager">👥 Caissiers</a>
+        <a href="/products.html" class="btn btn--ghost" data-role="manager">📦 Produits</a>
+        <button id="btn-summary" class="btn btn--ghost" data-role="manager">📊 Résumé du jour</button>
         <span class="header__clock" id="clock"></span>
       </div>
     </header>
@@ -45,7 +46,7 @@
         <div class="cart-footer">
           <div class="cart-total">
             <span>Total</span>
-            <span class="cart-total__amount" id="cart-total">0,00 €</span>
+            <span class="cart-total__amount" id="cart-total">0 DA</span>
           </div>
           <div class="cart-actions">
             <button id="btn-clear" class="btn btn--danger" disabled>Vider</button>
@@ -87,6 +88,7 @@
   <!-- ===== TOAST CONTAINER ===== -->
   <div class="toast-container" id="toast-container"></div>
 
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

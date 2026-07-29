@@ -11,27 +11,27 @@ const insert = db.prepare(
 
 const sampleProducts = [
   // Boulangerie / Viennoiseries
-  { name: 'Baguette tradition',    price: 1.30,  category: 'Boulangerie' },
-  { name: 'Pain de campagne',      price: 2.50,  category: 'Boulangerie' },
-  { name: 'Croissant',             price: 1.20,  category: 'Viennoiserie' },
-  { name: 'Pain au chocolat',      price: 1.40,  category: 'Viennoiserie' },
-  { name: 'Chausson aux pommes',   price: 1.60,  category: 'Viennoiserie' },
+  { name: 'Baguette tradition',    price: 20,   category: 'Boulangerie' },
+  { name: 'Pain de campagne',      price: 80,   category: 'Boulangerie' },
+  { name: 'Croissant',             price: 50,   category: 'Viennoiserie' },
+  { name: 'Pain au chocolat',      price: 60,   category: 'Viennoiserie' },
+  { name: 'Chausson aux pommes',   price: 70,   category: 'Viennoiserie' },
 
   // Pâtisseries
-  { name: 'Éclair au chocolat',    price: 3.50,  category: 'Pâtisserie' },
-  { name: 'Tarte aux fraises',     price: 4.00,  category: 'Pâtisserie' },
-  { name: 'Mille-feuille',         price: 4.50,  category: 'Pâtisserie' },
-  { name: 'Macaron (lot de 6)',    price: 9.00,  category: 'Pâtisserie' },
+  { name: 'Éclair au chocolat',    price: 150,  category: 'Pâtisserie' },
+  { name: 'Tarte aux fraises',     price: 180,  category: 'Pâtisserie' },
+  { name: 'Mille-feuille',         price: 180,  category: 'Pâtisserie' },
+  { name: 'Macaron (lot de 6)',    price: 350,  category: 'Pâtisserie' },
 
   // Boissons
-  { name: 'Café',                  price: 1.50,  category: 'Boisson' },
-  { name: 'Thé',                   price: 1.50,  category: 'Boisson' },
-  { name: 'Jus d\'orange frais',   price: 3.00,  category: 'Boisson' },
-  { name: 'Eau minérale',          price: 1.00,  category: 'Boisson' },
+  { name: 'Café',                  price: 100,  category: 'Boisson' },
+  { name: 'Thé',                   price: 80,   category: 'Boisson' },
+  { name: 'Jus d\'orange frais',   price: 150,  category: 'Boisson' },
+  { name: 'Eau minérale',          price: 40,   category: 'Boisson' },
 
   // Sandwiches
-  { name: 'Sandwich jambon-beurre', price: 4.50, category: 'Sandwich' },
-  { name: 'Croque-monsieur',       price: 5.00,  category: 'Sandwich' },
+  { name: 'Sandwich jambon-beurre', price: 200, category: 'Sandwich' },
+  { name: 'Croque-monsieur',       price: 250,  category: 'Sandwich' },
 ];
 
 const insertMany = db.transaction((products) => {

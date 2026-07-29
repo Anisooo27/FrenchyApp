@@ -1,11 +1,16 @@
 const express = require('express');
 const { getDb } = require('../db');
+const { requireAuth, requireManager } = require('../middleware/auth');
 
 const router = express.Router();
 
 // POST /api/orders — create a new order
-router.post('/', (req, res, next) => {
+router.post('/', requireAuth, (req, res, next) => {
   try {
+    if (!req.session.shiftId) {
+      return res.status(400).json({ error: 'Ouvrez votre caisse avant d\'encaisser une vente' });
+    }
+
     const { items, payment_method } = req.body || {};
     // items = [{ product_id, quantity }]
 
@@ -24,6 +29,14 @@ router.post('/', (req, res, next) => {
 
     const db = getDb();
 
+    // Make sure the shift is still open (it may have been closed from
+    // another tab/device since this session last checked).
+    const shift = db.prepare("SELECT * FROM shifts WHERE id = ? AND status = 'open'").get(req.session.shiftId);
+    if (!shift) {
+      req.session.shiftId = null;
+      return res.status(400).json({ error: 'Votre caisse a été fermée. Ouvrez-en une nouvelle avant d\'encaisser.' });
+    }
+
     // Look up current prices and compute total
     const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
     let total = 0;
@@ -39,17 +52,17 @@ router.post('/', (req, res, next) => {
       enrichedItems.push({ ...item, unit_price: unitPrice });
     }
 
-    total = Math.round(total * 100) / 100; // avoid floating-point drift
+    total = Math.round(total); // whole dinars
 
     const insertOrder = db.prepare(
-      'INSERT INTO orders (total, payment_method) VALUES (?, ?)'
+      'INSERT INTO orders (total, payment_method, cashier_id, shift_id) VALUES (?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)'
     );
 
     const createOrder = db.transaction(() => {
-      const orderInfo = insertOrder.run(total, payment_method);
+      const orderInfo = insertOrder.run(total, payment_method, req.session.cashierId, req.session.shiftId);
       const orderId = orderInfo.lastInsertRowid;
 
       for (const item of enrichedItems) {
@@ -67,8 +80,8 @@ router.post('/', (req, res, next) => {
   }
 });
 
-// GET /api/orders/today — sales summary for today
-router.get('/today', (req, res, next) => {
+// GET /api/orders/today — sales summary for today (all cashiers)
+router.get('/today', requireManager, (req, res, next) => {
   try {
     const db = getDb();
 
@@ -95,7 +108,7 @@ router.get('/today', (req, res, next) => {
 });
 
 // GET /api/orders/:id — get order detail
-router.get('/:id', (req, res, next) => {
+router.get('/:id', requireManager, (req, res, next) => {
   try {
     const db = getDb();
     const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);

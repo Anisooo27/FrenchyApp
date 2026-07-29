@@ -1,6 +1,10 @@
 const express = require('express');
+const session = require('express-session');
 const path = require('path');
 
+const authRoutes = require('./routes/auth');
+const shiftRoutes = require('./routes/shifts');
+const cashierRoutes = require('./routes/cashiers');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 
@@ -9,9 +13,19 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+app.use(session({
+  // Local single-shop kiosk app, not internet-facing — a static secret is fine here.
+  secret: process.env.SESSION_SECRET || 'frenchy-pos-local-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 12 * 60 * 60 * 1000 }, // 12h
+}));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/shifts', shiftRoutes);
+app.use('/api/cashiers', cashierRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 
