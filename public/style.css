@@ -415,6 +415,27 @@ body {
   cursor: not-allowed;
 }
 
+.btn--loading {
+  position: relative;
+  color: transparent !important;
+}
+.btn--loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
 .btn--primary {
   background: var(--color-primary);
   color: #fff;
@@ -653,6 +674,80 @@ body {
   font-weight: 700;
   color: var(--color-accent);
   margin-top: 12px;
+}
+
+/* ===== TOASTS ===== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: toastIn 0.3s ease-out;
+  pointer-events: auto;
+  max-width: 360px;
+}
+
+.toast--success {
+  background: linear-gradient(135deg, #00b894, #55efc4);
+  color: #0a2e20;
+}
+
+.toast--error {
+  background: linear-gradient(135deg, #e74c5c, #fd79a8);
+}
+
+.toast--info {
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast.fade-out {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ===== FULL-PAGE ERROR STATE ===== */
+.load-error {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+.load-error__icon {
+  font-size: 40px;
+}
+
+.load-error__text {
+  font-size: 15px;
+  max-width: 320px;
 }
 
 /* ===== RESPONSIVE ===== */

@@ -9,6 +9,7 @@ let deleteId = null;
 let sortField = 'name';
 let sortDir = 'asc';
 let searchQuery = '';
+let isSubmittingForm = false;
 
 // ===== DOM REFS =====
 const $form          = document.getElementById('product-form');
@@ -53,14 +54,39 @@ function showToast(message, type = 'success') {
 
 // ===== API =====
 async function fetchProducts() {
-  const res = await fetch('/api/products');
-  products = await res.json();
-  updateCategoryDatalist();
-  renderTable();
+  try {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error('Le serveur a répondu avec une erreur');
+    products = await res.json();
+    updateCategoryDatalist();
+    renderTable();
+  } catch (err) {
+    $tbody.innerHTML = `
+      <tr>
+        <td colspan="5">
+          <div class="table-empty">
+            <div class="table-empty__icon">⚠️</div>
+            <div class="table-empty__text">Impossible de charger les produits. Vérifiez que le serveur est démarré.</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    showToast('Impossible de charger les produits', 'error');
+  }
+}
+
+async function apiFetch(url, options) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (err) {
+    throw new Error('Serveur injoignable. Vérifiez que Frenchy POS est bien démarré.');
+  }
+  return res;
 }
 
 async function createProduct(data) {
-  const res = await fetch('/api/products', {
+  const res = await apiFetch('/api/products', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -71,7 +97,7 @@ async function createProduct(data) {
 }
 
 async function updateProduct(id, data) {
-  const res = await fetch(`/api/products/${id}`, {
+  const res = await apiFetch(`/api/products/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -82,7 +108,7 @@ async function updateProduct(id, data) {
 }
 
 async function deleteProduct(id) {
-  const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/api/products/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error);
   return json;
@@ -150,6 +176,7 @@ function clearErrors() {
 // ===== FORM SUBMIT =====
 $form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (isSubmittingForm) return;
   clearErrors();
 
   if (!validateForm()) return;
@@ -160,28 +187,29 @@ $form.addEventListener('submit', async (e) => {
     category: $inputCategory.value.trim(),
   };
 
+  isSubmittingForm = true;
+  $btnSubmit.parentElement.classList.add('btn--loading');
+  $btnSubmit.parentElement.disabled = true;
+
   try {
     if (editingId) {
       await updateProduct(editingId, data);
       showToast(`"${data.name}" modifié avec succès`);
       cancelEdit();
     } else {
-      const created = await createProduct(data);
+      await createProduct(data);
       showToast(`"${data.name}" ajouté avec succès`);
       $form.reset();
     }
     await fetchProducts();
-
-    // Highlight the row
-    setTimeout(() => {
-      const newRow = $tbody.querySelector(`tr[data-id="${editingId || ''}"]`) ||
-                     $tbody.querySelector('tr.row-new');
-    }, 50);
-
   } catch (err) {
     $errorGlobal.textContent = err.message;
     $errorGlobal.classList.add('visible');
     showToast(err.message, 'error');
+  } finally {
+    isSubmittingForm = false;
+    $btnSubmit.parentElement.classList.remove('btn--loading');
+    $btnSubmit.parentElement.disabled = false;
   }
 });
 
@@ -231,8 +259,11 @@ $deleteOverlay.addEventListener('click', (e) => {
   }
 });
 
+let isDeleting = false;
 $deleteConfirm.addEventListener('click', async () => {
-  if (!deleteId) return;
+  if (!deleteId || isDeleting) return;
+  isDeleting = true;
+  $deleteConfirm.disabled = true;
   try {
     await deleteProduct(deleteId);
     showToast('Produit supprimé', 'info');
@@ -245,6 +276,9 @@ $deleteConfirm.addEventListener('click', async () => {
     await fetchProducts();
   } catch (err) {
     showToast(err.message, 'error');
+  } finally {
+    isDeleting = false;
+    $deleteConfirm.disabled = false;
   }
 });
 

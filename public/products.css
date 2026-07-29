@@ -320,57 +320,6 @@
   transform: translateY(-1px);
 }
 
-/* ===== TOASTS ===== */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 3000;
-  pointer-events: none;
-}
-
-.toast {
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  animation: toastIn 0.3s ease-out;
-  pointer-events: auto;
-}
-
-.toast--success {
-  background: linear-gradient(135deg, #00b894, #55efc4);
-  color: #0a2e20;
-}
-
-.toast--error {
-  background: linear-gradient(135deg, #e74c5c, #fd79a8);
-}
-
-.toast--info {
-  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-}
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.toast.fade-out {
-  animation: toastOut 0.3s ease-in forwards;
-}
-
-@keyframes toastOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-10px); }
-}
-
 /* ===== EMPTY STATE ===== */
 .table-empty {
   text-align: center;

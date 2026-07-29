@@ -6,6 +6,7 @@
 let products = [];
 let cart = []; // { product_id, name, price, quantity }
 let activeCategory = 'Tout';
+let isSubmittingOrder = false;
 
 // ===== DOM REFS =====
 const $productGrid    = document.getElementById('product-grid');
@@ -31,6 +32,19 @@ const $summaryClose   = document.getElementById('summary-close');
 
 // ===== HELPERS =====
 const fmt = (n) => n.toFixed(2).replace('.', ',') + ' €';
+const $toastContainer = document.getElementById('toast-container');
+
+function showToast(message, type = 'error') {
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+  toast.textContent = message;
+  $toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    toast.addEventListener('animationend', () => toast.remove());
+  }, 3200);
+}
 
 function updateClock() {
   const now = new Date();
@@ -41,25 +55,55 @@ updateClock();
 
 // ===== API =====
 async function fetchProducts() {
-  const res = await fetch('/api/products');
-  products = await res.json();
-  renderCategories();
-  renderProducts();
+  try {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error('Le serveur a répondu avec une erreur');
+    products = await res.json();
+    renderCategories();
+    renderProducts();
+  } catch (err) {
+    renderLoadError();
+  }
 }
 
 async function submitOrder(paymentMethod) {
   const items = cart.map(c => ({ product_id: c.product_id, quantity: c.quantity }));
-  const res = await fetch('/api/orders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items, payment_method: paymentMethod }),
-  });
-  return res.json();
+  let res;
+  try {
+    res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items, payment_method: paymentMethod }),
+    });
+  } catch (err) {
+    throw new Error('Serveur injoignable. Le panier est conservé, réessayez.');
+  }
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Impossible d\'enregistrer la commande');
+  return json;
 }
 
 async function fetchTodaySummary() {
-  const res = await fetch('/api/orders/today');
+  let res;
+  try {
+    res = await fetch('/api/orders/today');
+  } catch (err) {
+    throw new Error('Serveur injoignable. Vérifiez que Frenchy POS est bien démarré.');
+  }
+  if (!res.ok) throw new Error('Impossible de charger le résumé du jour');
   return res.json();
+}
+
+function renderLoadError() {
+  $categoryFilters.innerHTML = '';
+  $productGrid.innerHTML = `
+    <div class="load-error">
+      <div class="load-error__icon">⚠️</div>
+      <div class="load-error__text">Impossible de charger les produits. Vérifiez que le serveur est démarré.</div>
+      <button class="btn btn--primary" id="btn-retry-load" style="flex:none;">Réessayer</button>
+    </div>
+  `;
+  document.getElementById('btn-retry-load').addEventListener('click', fetchProducts);
 }
 
 // ===== RENDER PRODUCTS =====
@@ -187,8 +231,11 @@ function renderCart() {
 
 // ===== PAYMENT =====
 function openPaymentModal(method) {
+  if (cart.length === 0) return;
   const total = getTotal();
   $modalOverlay.hidden = false;
+  $modalConfirm.disabled = false;
+  $modalConfirm.classList.remove('btn--loading');
 
   if (method === 'card') {
     $modalTitle.textContent = '💳 Paiement par carte';
@@ -196,7 +243,7 @@ function openPaymentModal(method) {
       <p style="font-size: 15px; margin-bottom: 12px;">Montant à encaisser :</p>
       <p style="font-size: 32px; font-weight: 800; color: var(--color-accent);">${fmt(total)}</p>
     `;
-    $modalConfirm.onclick = () => confirmPayment(method);
+    $modalConfirm.onclick = () => { if (!isSubmittingOrder) confirmPayment(method); };
   } else {
     $modalTitle.textContent = '💵 Paiement en espèces';
     $modalBody.innerHTML = `
@@ -225,6 +272,7 @@ function openPaymentModal(method) {
     });
 
     $modalConfirm.onclick = () => {
+      if (isSubmittingOrder) return;
       const given = parseFloat($cashInput.value) || 0;
       if (given < total) {
         $cashInput.style.borderColor = 'var(--color-danger)';
@@ -240,10 +288,22 @@ function openPaymentModal(method) {
 }
 
 async function confirmPayment(method) {
-  closeModal();
-  const result = await submitOrder(method);
-  showSuccess(result);
-  clearCart();
+  isSubmittingOrder = true;
+  $modalConfirm.disabled = true;
+  $modalConfirm.classList.add('btn--loading');
+
+  try {
+    const result = await submitOrder(method);
+    closeModal();
+    showSuccess(result);
+    clearCart();
+  } catch (err) {
+    showToast(err.message || 'Impossible d\'enregistrer la commande. Le panier est conservé.');
+    $modalConfirm.disabled = false;
+    $modalConfirm.classList.remove('btn--loading');
+  } finally {
+    isSubmittingOrder = false;
+  }
 }
 
 function closeModal() {
@@ -265,7 +325,13 @@ function showSuccess(order) {
 
 // ===== SUMMARY =====
 async function openSummary() {
-  const data = await fetchTodaySummary();
+  let data;
+  try {
+    data = await fetchTodaySummary();
+  } catch (err) {
+    showToast(err.message || 'Impossible de charger le résumé du jour');
+    return;
+  }
   const { summary, orders } = data;
 
   $summaryBody.innerHTML = `
