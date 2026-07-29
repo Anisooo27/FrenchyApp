@@ -106,11 +106,21 @@ function renderLoadError() {
   document.getElementById('btn-retry-load').addEventListener('click', fetchProducts);
 }
 
+// ===== ESCAPE HTML (safe for both text content and attribute values) =====
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ===== RENDER PRODUCTS =====
 function renderCategories() {
   const categories = ['Tout', ...new Set(products.map(p => p.category))];
   $categoryFilters.innerHTML = categories.map(c =>
-    `<button class="category-btn ${c === activeCategory ? 'active' : ''}" data-cat="${c}">${c}</button>`
+    `<button class="category-btn ${c === activeCategory ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`
   ).join('');
 
   $categoryFilters.querySelectorAll('.category-btn').forEach(btn => {
@@ -129,8 +139,8 @@ function renderProducts() {
 
   $productGrid.innerHTML = filtered.map(p => `
     <div class="product-card" data-id="${p.id}">
-      <span class="product-card__category">${p.category}</span>
-      <span class="product-card__name">${p.name}</span>
+      <span class="product-card__category">${escapeHtml(p.category)}</span>
+      <span class="product-card__name">${escapeHtml(p.name)}</span>
       <span class="product-card__price">${fmt(p.price)}</span>
     </div>
   `).join('');
@@ -198,7 +208,7 @@ function renderCart() {
   const html = cart.map(c => `
     <div class="cart-item" data-id="${c.product_id}">
       <div class="cart-item__info">
-        <div class="cart-item__name">${c.name}</div>
+        <div class="cart-item__name">${escapeHtml(c.name)}</div>
         <div class="cart-item__unit-price">${fmt(c.price)} / unité</div>
       </div>
       <div class="cart-item__qty">
