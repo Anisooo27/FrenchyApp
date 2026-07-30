@@ -1,4 +1,11 @@
+const path = require('path');
 const { printer: ThermalPrinter, types: PrinterTypes, characterSet: CharacterSet } = require('node-thermal-printer');
+
+// Pre-thresholded black-on-white wordmark for thermal printing — the real
+// logo (public/logo.png) has a dark teal fill, which a thermal printer's
+// plain luminance threshold would render as a big solid-black rectangle.
+// This is a separate asset, generated once from the same source crop.
+const RECEIPT_LOGO_PATH = path.join(__dirname, 'receipt-logo.png');
 
 // The printer connects to the till's PC over USB, but Windows exposes a
 // USB thermal printer as a normal print queue once its driver is installed
@@ -33,7 +40,7 @@ function truncateLeft(text, rightText) {
   return `${text.slice(0, Math.max(maxLeft - 3, 0))}...`;
 }
 
-function buildReceipt(order) {
+async function buildReceipt(order) {
   const printer = new ThermalPrinter({
     type: PrinterTypes.EPSON,
     interface: PRINTER_INTERFACE,
@@ -44,11 +51,18 @@ function buildReceipt(order) {
   });
 
   printer.alignCenter();
-  printer.bold(true);
-  printer.setTextDoubleHeight();
-  printer.println(SHOP_NAME);
-  printer.setTextNormal();
-  printer.bold(false);
+  try {
+    await printer.printImage(RECEIPT_LOGO_PATH);
+  } catch (err) {
+    // Logo failure must never take the text receipt down with it —
+    // fall back to the plain text shop name instead.
+    console.error('Logo du ticket non imprime:', (err && err.message) || err);
+    printer.bold(true);
+    printer.setTextDoubleHeight();
+    printer.println(SHOP_NAME);
+    printer.setTextNormal();
+    printer.bold(false);
+  }
   printer.println(new Date(order.createdAt).toLocaleString('fr-FR'));
   printer.drawLine();
 
@@ -98,7 +112,7 @@ function withTimeout(promise, ms) {
 
 async function doPrint(order) {
   try {
-    const printer = buildReceipt(order);
+    const printer = await buildReceipt(order);
     await withTimeout(printer.execute(), 2500);
     return { printed: true };
   } catch (err) {
@@ -119,8 +133,9 @@ function printReceipt(order) {
 }
 
 // Exposed for testing/previewing receipt formatting without a physical printer.
-function renderReceiptText(order) {
-  return buildReceipt(order).getText();
+async function renderReceiptText(order) {
+  const printer = await buildReceipt(order);
+  return printer.getText();
 }
 
 module.exports = { printReceipt, renderReceiptText };
