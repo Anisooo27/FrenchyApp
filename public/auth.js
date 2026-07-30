@@ -57,7 +57,7 @@
   // ===== SCREEN: BOOTSTRAP (first run) =====
   function showBootstrap() {
     $card.innerHTML = `
-      <span class="auth-logo">🥐</span>
+      <img src="/logo.png" class="auth-logo-img" alt="Frenchy">
       <h2>Bienvenue sur Frenchy POS</h2>
       <p class="auth-subtitle">Créez le compte du gérant pour commencer</p>
       <form id="bootstrap-form">
@@ -122,7 +122,7 @@
     }
 
     $card.innerHTML = `
-      <span class="auth-logo">🥐</span>
+      <img src="/logo.png" class="auth-logo-img" alt="Frenchy">
       <h2>Qui êtes-vous ?</h2>
       <p class="auth-subtitle">Sélectionnez votre nom pour vous connecter</p>
       <div class="cashier-picker" id="cashier-picker"></div>
@@ -150,7 +150,7 @@
 
     $card.innerHTML = `
       <button class="auth-back" id="pin-back">← Retour</button>
-      <span class="auth-logo">🔒</span>
+      <img src="/logo.png" class="auth-logo-img auth-logo-img--sm" alt="Frenchy">
       <h2>${escapeHtml(cashier.name)}</h2>
       <p class="auth-subtitle">Entrez votre code PIN</p>
       <div class="pin-dots" id="pin-dots">

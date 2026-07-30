@@ -3,20 +3,27 @@
    ============================================ */
 
 :root {
-  /* Palette */
+  /* Palette — primary/accent extracted from the Frenchy logo (images/MAINlogo.png:
+     brand teal #0e3e40, brand gold #dfad59). Neutrals (bg/surface/text/border) are
+     kept close to the original dark theme for readability, per design decision.
+     Meaning-colors (danger/success used in toasts, warnings) are deliberately left
+     untouched so they stay unambiguous even though the brand gold could otherwise
+     read as "warning" amber. */
   --color-bg:          #0f1117;
   --color-surface:     #1a1d27;
   --color-surface-alt: #222636;
   --color-border:      #2e3348;
   --color-text:        #e8eaf0;
   --color-text-dim:    #8b90a5;
-  --color-primary:     #6c5ce7;
-  --color-primary-glow:#6c5ce740;
-  --color-accent:      #00b894;
-  --color-accent-glow: #00b89440;
+  --color-primary:      #dfae58;
+  --color-primary-dark: #c58b26;
+  --color-primary-glow: #dfae5840;
+  --color-primary-text: #171006; /* dark text for use on top of the gold primary — white fails contrast */
+  --color-accent:      #29758e;
+  --color-accent-dark: #1e5567;
+  --color-accent-glow: #29758e40;
   --color-danger:      #e74c5c;
   --color-danger-glow: #e74c5c40;
-  --color-gold:        #fdcb6e;
 
   /* Typography */
   --font: 'Inter', system-ui, -apple-system, sans-serif;
@@ -67,18 +74,10 @@ body {
 }
 
 .header__logo {
-  font-size: 28px;
-  filter: drop-shadow(0 0 8px var(--color-gold));
-}
-
-.header__title {
-  font-size: 22px;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--color-gold), #f8a500);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.5px;
+  height: 40px;
+  width: auto;
+  border-radius: 8px;
+  display: block;
 }
 
 .header__actions {
@@ -149,7 +148,7 @@ body {
 .category-btn.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-text);
   box-shadow: 0 0 12px var(--color-primary-glow);
 }
 
@@ -339,6 +338,7 @@ body {
 .cart-item__qty button:hover {
   border-color: var(--color-primary);
   background: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .cart-item__qty span {
@@ -445,11 +445,11 @@ body {
 
 .btn--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-text);
   box-shadow: 0 4px 14px var(--color-primary-glow);
 }
 .btn--primary:hover:not(:disabled) {
-  background: #7c6ef0;
+  background: var(--color-primary-dark);
   box-shadow: 0 6px 20px var(--color-primary-glow);
   transform: translateY(-1px);
 }
@@ -460,7 +460,7 @@ body {
   box-shadow: 0 4px 14px var(--color-accent-glow);
 }
 .btn--accent:hover:not(:disabled) {
-  background: #00d2a0;
+  background: var(--color-accent-dark);
   box-shadow: 0 6px 20px var(--color-accent-glow);
   transform: translateY(-1px);
 }
@@ -718,7 +718,7 @@ body {
 }
 
 .toast--info {
-  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  background: linear-gradient(135deg, var(--color-accent), #4a9cb5);
 }
 
 @keyframes toastIn {
@@ -785,6 +785,19 @@ body {
   font-size: 48px;
   display: block;
   margin-bottom: 12px;
+}
+
+.auth-logo-img {
+  width: 220px;
+  max-width: 80%;
+  height: auto;
+  border-radius: 14px;
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.auth-logo-img--sm {
+  width: 160px;
 }
 
 .auth-card h2 {

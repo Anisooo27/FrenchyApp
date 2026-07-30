@@ -423,7 +423,7 @@
 .action-btn--edit:hover {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-text);
 }
 
 .action-btn--delete:hover {
