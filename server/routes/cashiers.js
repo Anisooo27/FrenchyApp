@@ -29,7 +29,15 @@ router.get('/', requireManager, (req, res, next) => {
     const cashiers = db.prepare(
       'SELECT id, name, role, active, created_at FROM cashiers ORDER BY active DESC, name'
     ).all();
-    res.json(cashiers);
+
+    const countOrders = db.prepare('SELECT COUNT(*) AS count FROM orders WHERE cashier_id = ?');
+    const countShifts = db.prepare('SELECT COUNT(*) AS count FROM shifts WHERE cashier_id = ?');
+    const withHistory = cashiers.map(c => ({
+      ...c,
+      hasHistory: countOrders.get(c.id).count > 0 || countShifts.get(c.id).count > 0,
+    }));
+
+    res.json(withHistory);
   } catch (err) {
     next(err);
   }
@@ -90,24 +98,32 @@ router.put('/:id', requireManager, (req, res, next) => {
   }
 });
 
-// DELETE /api/cashiers/:id — soft delete (deactivate), preserves shift/order history
+// DELETE /api/cashiers/:id — permanent deletion, only when the account has
+// zero orders and zero shifts. Accounts with any history can only be
+// deactivated (PUT { active: false }) so past sales stay attributable.
 router.delete('/:id', requireManager, (req, res, next) => {
   try {
     const db = getDb();
     const existing = db.prepare('SELECT * FROM cashiers WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Caissier introuvable' });
 
+    const { count: orderCount } = db.prepare('SELECT COUNT(*) AS count FROM orders WHERE cashier_id = ?').get(existing.id);
+    const { count: shiftCount } = db.prepare('SELECT COUNT(*) AS count FROM shifts WHERE cashier_id = ?').get(existing.id);
+    if (orderCount > 0 || shiftCount > 0) {
+      return res.status(400).json({ error: 'Ce compte a un historique de ventes — vous pouvez seulement le désactiver.' });
+    }
+
     if (existing.role === 'manager' && existing.active) {
       const { count } = db.prepare(
         "SELECT COUNT(*) AS count FROM cashiers WHERE role = 'manager' AND active = 1 AND id != ?"
       ).get(existing.id);
       if (count === 0) {
-        return res.status(400).json({ error: 'Impossible de désactiver le dernier compte gérant actif' });
+        return res.status(400).json({ error: 'Impossible de supprimer le dernier compte gérant actif' });
       }
     }
 
-    db.prepare('UPDATE cashiers SET active = 0 WHERE id = ?').run(req.params.id);
-    res.json({ message: 'Caissier désactivé' });
+    db.prepare('DELETE FROM cashiers WHERE id = ?').run(existing.id);
+    res.json({ message: 'Caissier supprimé' });
   } catch (err) {
     next(err);
   }

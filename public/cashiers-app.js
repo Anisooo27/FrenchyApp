@@ -27,6 +27,12 @@ const $cashierCount = document.getElementById('cashier-count');
 
 const $toastContainer = document.getElementById('toast-container');
 
+const $deleteOverlay = document.getElementById('delete-overlay');
+const $deleteMessage = document.getElementById('delete-message');
+const $deleteCancel  = document.getElementById('delete-cancel');
+const $deleteConfirm = document.getElementById('delete-confirm');
+let deleteTargetId = null;
+
 // ===== HELPERS =====
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -97,6 +103,13 @@ async function updateCashier(id, data) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error);
+  return json;
+}
+
+async function deleteCashier(id) {
+  const res = await apiFetch(`/api/cashiers/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error);
   return json;
@@ -212,6 +225,45 @@ function cancelEdit() {
 
 $btnCancel.addEventListener('click', cancelEdit);
 
+// ===== DELETE (only when no history) =====
+function promptDelete(cashier) {
+  deleteTargetId = cashier.id;
+  $deleteMessage.textContent = `Êtes-vous sûr de vouloir supprimer définitivement "${cashier.name}" ? Cette action est irréversible.`;
+  $deleteOverlay.hidden = false;
+}
+
+$deleteCancel.addEventListener('click', () => {
+  $deleteOverlay.hidden = true;
+  deleteTargetId = null;
+});
+
+$deleteOverlay.addEventListener('click', (e) => {
+  if (e.target === $deleteOverlay) {
+    $deleteOverlay.hidden = true;
+    deleteTargetId = null;
+  }
+});
+
+let isDeletingCashier = false;
+$deleteConfirm.addEventListener('click', async () => {
+  if (!deleteTargetId || isDeletingCashier) return;
+  isDeletingCashier = true;
+  $deleteConfirm.disabled = true;
+  try {
+    await deleteCashier(deleteTargetId);
+    showToast('Compte supprimé', 'info');
+    $deleteOverlay.hidden = true;
+    if (editingId === deleteTargetId) cancelEdit();
+    deleteTargetId = null;
+    await fetchCashiers();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    isDeletingCashier = false;
+    $deleteConfirm.disabled = false;
+  }
+});
+
 // ===== TOGGLE ACTIVE =====
 async function toggleActive(cashier) {
   try {
@@ -251,7 +303,8 @@ function renderTable() {
       <td class="col-actions">
         <div class="action-btns">
           <button class="action-btn action-btn--edit" data-id="${c.id}" title="Modifier">✏️</button>
-          <button class="action-btn action-btn--delete" data-id="${c.id}" title="${c.active ? 'Désactiver' : 'Réactiver'}">${c.active ? '🔒' : '🔓'}</button>
+          <button class="action-btn action-btn--toggle" data-id="${c.id}" title="${c.active ? 'Désactiver' : 'Réactiver'}">${c.active ? '🔒' : '🔓'}</button>
+          <button class="action-btn action-btn--delete" data-id="${c.id}" ${c.hasHistory ? 'disabled' : ''} title="${c.hasHistory ? 'Ce compte a un historique de ventes — vous pouvez seulement le désactiver.' : 'Supprimer définitivement'}">🗑️</button>
         </div>
       </td>
     </tr>
@@ -265,6 +318,13 @@ function renderTable() {
   });
 
   $tbody.querySelectorAll('.action-btn--delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const c = cashiers.find(c => c.id === Number(btn.dataset.id));
+      if (c && !c.hasHistory) promptDelete(c);
+    });
+  });
+
+  $tbody.querySelectorAll('.action-btn--toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const c = cashiers.find(c => c.id === Number(btn.dataset.id));
       if (c) toggleActive(c);

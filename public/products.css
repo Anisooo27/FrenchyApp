@@ -402,6 +402,18 @@
   color: #fff;
 }
 
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.action-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
 /* ===== DANGER FILL BUTTON ===== */
 .btn--danger-fill {
   background: var(--color-danger);
