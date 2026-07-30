@@ -68,6 +68,13 @@
           <div class="table-panel__search">
             <input type="text" id="search-input" placeholder="🔍 Rechercher un produit…">
           </div>
+          <select id="category-filter" class="category-select">
+            <option value="">Toutes les catégories</option>
+          </select>
+          <label class="archived-toggle">
+            <input type="checkbox" id="show-archived-toggle">
+            Afficher les articles archivés
+          </label>
           <span class="product-count" id="product-count">0 produits</span>
         </div>
 
@@ -79,6 +86,7 @@
                 <th class="col-name sortable" data-sort="name">Nom ↕</th>
                 <th class="col-price sortable" data-sort="price">Prix ↕</th>
                 <th class="col-category sortable" data-sort="category">Catégorie ↕</th>
+                <th>Statut</th>
                 <th class="col-actions">Actions</th>
               </tr>
             </thead>

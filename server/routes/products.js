@@ -32,11 +32,20 @@ function validateProduct({ name, price, category }, partial = false) {
   return errors;
 }
 
-// GET /api/products — list all products
+// GET /api/products — list products. Only active ones by default (the till
+// always calls it this way); pass ?includeArchived=1 to also get archived
+// ones (used by the admin page's "show archived" toggle).
 router.get('/', requireAuth, (req, res, next) => {
   try {
     const db = getDb();
-    const products = db.prepare('SELECT * FROM products ORDER BY category, name').all();
+    const includeArchived = req.query.includeArchived === '1' || req.query.includeArchived === 'true';
+    const products = includeArchived
+      ? db.prepare('SELECT * FROM products ORDER BY category, name').all()
+      : db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY category, name').all();
+
+    const countOrderItems = db.prepare('SELECT COUNT(*) AS count FROM order_items WHERE product_id = ?');
+    for (const p of products) p.hasHistory = countOrderItems.get(p.id).count > 0;
+
     res.json(products);
   } catch (err) {
     next(err);
@@ -79,10 +88,10 @@ router.post('/', requireManager, (req, res, next) => {
   }
 });
 
-// PUT /api/products/:id — update a product
+// PUT /api/products/:id — update a product (name/price/category/active)
 router.put('/:id', requireManager, (req, res, next) => {
   try {
-    const { name, price, category } = req.body || {};
+    const { name, price, category, active } = req.body || {};
     const db = getDb();
     const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Produit introuvable' });
@@ -93,26 +102,37 @@ router.put('/:id', requireManager, (req, res, next) => {
       return res.status(400).json({ error: errors.join('. ') });
     }
 
-    const finalName     = name     !== undefined ? name.trim()                         : existing.name;
-    const finalPrice    = price    !== undefined ? Math.round(Number(price)) : existing.price;
-    const finalCategory = category !== undefined ? category.trim()                      : existing.category;
+    const finalName     = name     !== undefined ? name.trim()                       : existing.name;
+    const finalPrice    = price    !== undefined ? Math.round(Number(price))          : existing.price;
+    const finalCategory = category !== undefined ? category.trim()                    : existing.category;
+    const finalActive   = active   !== undefined ? (active ? 1 : 0)                   : existing.active;
 
     db.prepare(
-      'UPDATE products SET name = ?, price = ?, category = ? WHERE id = ?'
-    ).run(finalName, finalPrice, finalCategory, req.params.id);
+      'UPDATE products SET name = ?, price = ?, category = ?, active = ? WHERE id = ?'
+    ).run(finalName, finalPrice, finalCategory, finalActive, req.params.id);
 
-    res.json({ id: Number(req.params.id), name: finalName, price: finalPrice, category: finalCategory });
+    res.json({ id: Number(req.params.id), name: finalName, price: finalPrice, category: finalCategory, active: finalActive });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/products/:id — delete a product
+// DELETE /api/products/:id — permanent deletion, only when the product has
+// never been sold (zero order_items). A product with any sales history can
+// only be archived (PUT { active: false }) — hard-deleting it would leave
+// past orders referencing a product that no longer exists.
 router.delete('/:id', requireManager, (req, res, next) => {
   try {
     const db = getDb();
-    const info = db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
-    if (info.changes === 0) return res.status(404).json({ error: 'Produit introuvable' });
+    const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Produit introuvable' });
+
+    const { count } = db.prepare('SELECT COUNT(*) AS count FROM order_items WHERE product_id = ?').get(existing.id);
+    if (count > 0) {
+      return res.status(400).json({ error: 'Ce produit a été vendu par le passé — vous pouvez seulement l\'archiver.' });
+    }
+
+    db.prepare('DELETE FROM products WHERE id = ?').run(existing.id);
     res.json({ message: 'Produit supprimé' });
   } catch (err) {
     next(err);

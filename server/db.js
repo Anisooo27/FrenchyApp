@@ -22,7 +22,8 @@ function initTables() {
       id    INTEGER PRIMARY KEY AUTOINCREMENT,
       name  TEXT    NOT NULL,
       price REAL    NOT NULL,
-      category TEXT NOT NULL DEFAULT 'Général'
+      category TEXT NOT NULL DEFAULT 'Général',
+      active   INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS cashiers (
@@ -70,6 +71,15 @@ function initTables() {
   `);
 
   migrateOrdersTable();
+  migrateProductsTable();
+}
+
+// products existed before the active/archive flag was introduced.
+function migrateProductsTable() {
+  const columns = db.prepare("PRAGMA table_info(products)").all().map(c => c.name);
+  if (!columns.includes('active')) {
+    db.exec('ALTER TABLE products ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+  }
 }
 
 // orders existed before cashier_id/shift_id were introduced — add the

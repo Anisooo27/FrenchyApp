@@ -9,6 +9,8 @@ let deleteId = null;
 let sortField = 'name';
 let sortDir = 'asc';
 let searchQuery = '';
+let categoryFilter = '';
+let showArchived = false;
 let isSubmittingForm = false;
 
 // ===== DOM REFS =====
@@ -29,6 +31,8 @@ const $categoryList  = document.getElementById('category-list');
 const $tbody         = document.getElementById('product-tbody');
 const $productCount  = document.getElementById('product-count');
 const $searchInput   = document.getElementById('search-input');
+const $categoryFilter = document.getElementById('category-filter');
+const $showArchivedToggle = document.getElementById('show-archived-toggle');
 
 const $deleteOverlay = document.getElementById('delete-overlay');
 const $deleteMessage = document.getElementById('delete-message');
@@ -55,15 +59,17 @@ function showToast(message, type = 'success') {
 // ===== API =====
 async function fetchProducts() {
   try {
-    const res = await fetch('/api/products');
+    const url = showArchived ? '/api/products?includeArchived=1' : '/api/products';
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Le serveur a répondu avec une erreur');
     products = await res.json();
     updateCategoryDatalist();
+    updateCategoryFilterOptions();
     renderTable();
   } catch (err) {
     $tbody.innerHTML = `
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           <div class="table-empty">
             <div class="table-empty__icon">⚠️</div>
             <div class="table-empty__text">Impossible de charger les produits. Vérifiez que le serveur est démarré.</div>
@@ -118,6 +124,16 @@ async function deleteProduct(id) {
 function updateCategoryDatalist() {
   const categories = [...new Set(products.map(p => p.category))].sort();
   $categoryList.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+}
+
+// ===== CATEGORY FILTER DROPDOWN =====
+function updateCategoryFilterOptions() {
+  const categories = [...new Set(products.map(p => p.category))].sort();
+  const current = $categoryFilter.value;
+  $categoryFilter.innerHTML = '<option value="">Toutes les catégories</option>' +
+    categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  // Preserve the current selection across re-fetches if it's still valid
+  if (categories.includes(current)) $categoryFilter.value = current;
 }
 
 // ===== VALIDATION (client-side) =====
@@ -200,6 +216,7 @@ $form.addEventListener('submit', async (e) => {
       await createProduct(data);
       showToast(`"${data.name}" ajouté avec succès`);
       $form.reset();
+      if (categoryFilter) $inputCategory.value = categoryFilter;
     }
     await fetchProducts();
   } catch (err) {
@@ -235,6 +252,7 @@ function cancelEdit() {
   $btnSubmit.textContent = 'Ajouter';
   $btnCancel.hidden = true;
   $form.reset();
+  if (categoryFilter) $inputCategory.value = categoryFilter;
   clearErrors();
 }
 
@@ -282,6 +300,31 @@ $deleteConfirm.addEventListener('click', async () => {
   }
 });
 
+// ===== ARCHIVE / REACTIVATE =====
+async function toggleProductActive(product) {
+  try {
+    await updateProduct(product.id, { active: !product.active });
+    showToast(product.active ? 'Produit archivé' : 'Produit réactivé', 'info');
+    await fetchProducts();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ===== CATEGORY FILTER & ARCHIVED TOGGLE =====
+$categoryFilter.addEventListener('change', () => {
+  categoryFilter = $categoryFilter.value;
+  // Default a new product to the active filter, as a convenience — only
+  // when not mid-edit, so it doesn't clobber an in-progress edit.
+  if (!editingId && categoryFilter) $inputCategory.value = categoryFilter;
+  renderTable();
+});
+
+$showArchivedToggle.addEventListener('change', () => {
+  showArchived = $showArchivedToggle.checked;
+  fetchProducts();
+});
+
 // ===== SORTING =====
 function setSort(field) {
   if (sortField === field) {
@@ -307,8 +350,11 @@ $searchInput.addEventListener('input', () => {
 function renderTable() {
   // Filter
   let filtered = products;
+  if (categoryFilter) {
+    filtered = filtered.filter(p => p.category === categoryFilter);
+  }
   if (searchQuery) {
-    filtered = products.filter(p =>
+    filtered = filtered.filter(p =>
       p.name.toLowerCase().includes(searchQuery) ||
       p.category.toLowerCase().includes(searchQuery)
     );
@@ -346,12 +392,13 @@ function renderTable() {
 
   // Render rows
   if (filtered.length === 0) {
+    const noMatch = searchQuery || categoryFilter;
     $tbody.innerHTML = `
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           <div class="table-empty">
-            <div class="table-empty__icon">${searchQuery ? '🔍' : '📦'}</div>
-            <div class="table-empty__text">${searchQuery ? 'Aucun produit trouvé' : 'Aucun produit — ajoutez-en un !'}</div>
+            <div class="table-empty__icon">${noMatch ? '🔍' : '📦'}</div>
+            <div class="table-empty__text">${noMatch ? 'Aucun produit trouvé' : 'Aucun produit — ajoutez-en un !'}</div>
           </div>
         </td>
       </tr>
@@ -365,10 +412,12 @@ function renderTable() {
       <td class="col-name" style="font-weight: 600;">${escapeHtml(p.name)}</td>
       <td class="col-price price-cell">${fmt(p.price)}</td>
       <td class="col-category"><span class="category-badge">${escapeHtml(p.category)}</span></td>
+      <td><span class="status-badge ${p.active ? 'status-badge--active' : 'status-badge--inactive'}">${p.active ? 'Actif' : 'Archivé'}</span></td>
       <td class="col-actions">
         <div class="action-btns">
           <button class="action-btn action-btn--edit" data-id="${p.id}" title="Modifier">✏️</button>
-          <button class="action-btn action-btn--delete" data-id="${p.id}" title="Supprimer">🗑️</button>
+          <button class="action-btn action-btn--toggle" data-id="${p.id}" title="${p.active ? 'Archiver' : 'Réactiver'}">${p.active ? '🔒' : '🔓'}</button>
+          <button class="action-btn action-btn--delete" data-id="${p.id}" ${p.hasHistory ? 'disabled' : ''} title="${p.hasHistory ? 'Ce produit a été vendu par le passé — vous pouvez seulement l\'archiver.' : 'Supprimer définitivement'}">🗑️</button>
         </div>
       </td>
     </tr>
@@ -382,9 +431,17 @@ function renderTable() {
     });
   });
 
+  $tbody.querySelectorAll('.action-btn--toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = products.find(p => p.id === Number(btn.dataset.id));
+      if (p) toggleProductActive(p);
+    });
+  });
+
   $tbody.querySelectorAll('.action-btn--delete').forEach(btn => {
     btn.addEventListener('click', () => {
       const p = products.find(p => p.id === Number(btn.dataset.id));
+      if (p && p.hasHistory) return;
       if (p) promptDelete(p);
     });
   });
