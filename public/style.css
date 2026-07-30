@@ -157,6 +157,13 @@ body {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  /* Explicit min-content rather than the default "auto": with the full
+     catalog (150+ items => 40+ implicit rows) inside this scrollable,
+     flex-shrunk container, "auto" row sizing collapsed every row to ~34px
+     and clipped the name/price — min-content has unambiguous sizing rules
+     and doesn't hit that. */
+  grid-auto-rows: min-content;
+  align-content: start;
   gap: 12px;
   overflow-y: auto;
   padding-right: 4px;
