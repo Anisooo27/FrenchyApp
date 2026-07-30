@@ -8,6 +8,20 @@
   const page = document.body.dataset.page; // 'pos' or 'manager'
   const state = { cashier: null, shift: null, pendingCashier: null, pinBuffer: '' };
 
+  // ===== TOAST (avoid native alert() — invisible/inconsistent on touchscreens) =====
+  function showToast(message, type = 'error') {
+    const $container = document.getElementById('toast-container');
+    if (!$container) { console.error(message); return; }
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.textContent = message;
+    $container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }, 3200);
+  }
+
   // ===== API HELPER =====
   async function apiFetch(url, options) {
     let res;
@@ -315,15 +329,22 @@
     try {
       shift = await apiFetch('/api/shifts/current');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message);
       return;
     }
     if (!shift) {
-      alert('Aucune caisse ouverte');
+      showToast('Aucune caisse ouverte');
       return;
     }
 
-    const expectedHint = shift.starting_cash + shift.totals.cash_total;
+    // shift.totals should always be present (the server always computes it
+    // alongside the shift), but if the response ever came back malformed,
+    // fail loudly with a toast instead of silently doing nothing on click.
+    const totals = shift.totals || { order_count: 0, total_revenue: 0, cash_total: 0, card_total: 0 };
+    if (!shift.totals) {
+      console.error('shift.totals manquant dans la reponse de /api/shifts/current', shift);
+      showToast('Impossible de charger les ventes de ce service — chiffres a verifier manuellement');
+    }
 
     const $modalOverlay = document.createElement('div');
     $modalOverlay.className = 'modal-overlay';
@@ -331,8 +352,8 @@
       <div class="modal">
         <h3 class="modal__title">🔒 Fermeture de caisse</h3>
         <div class="modal__body">
-          <p style="margin-bottom:10px;">Ventes de ce service : <strong>${shift.totals.order_count}</strong> commande(s), <strong>${Math.round(shift.totals.total_revenue)} DA</strong></p>
-          <p style="margin-bottom:16px; color: var(--color-text-dim); font-size:13px;">Fond de départ ${Math.round(shift.starting_cash)} DA + espèces encaissées ${Math.round(shift.totals.cash_total)} DA</p>
+          <p style="margin-bottom:10px;">Ventes de ce service : <strong>${totals.order_count}</strong> commande(s), <strong>${Math.round(totals.total_revenue)} DA</strong></p>
+          <p style="margin-bottom:16px; color: var(--color-text-dim); font-size:13px;">Fond de départ ${Math.round(shift.starting_cash)} DA + espèces encaissées ${Math.round(totals.cash_total)} DA</p>
           <label for="counted-cash">Montant compté en caisse (DA)</label>
           <input type="number" id="counted-cash" min="0" step="1" placeholder="0" autofocus>
           <div class="auth-error" id="close-shift-error"></div>
