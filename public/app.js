@@ -62,14 +62,17 @@ async function fetchProducts() {
   }
 }
 
-async function submitOrder(paymentMethod) {
+async function submitOrder(paymentMethod, cashReceived) {
   const items = cart.map(c => ({ product_id: c.product_id, quantity: c.quantity }));
+  const body = { items, payment_method: paymentMethod };
+  if (paymentMethod === 'cash' && cashReceived != null) body.cash_received = cashReceived;
+
   let res;
   try {
     res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items, payment_method: paymentMethod }),
+      body: JSON.stringify(body),
     });
   } catch (err) {
     throw new Error('Serveur injoignable. Le panier est conservé, réessayez.');
@@ -238,7 +241,7 @@ function openPaymentModal(method) {
       <p style="font-size: 15px; margin-bottom: 12px;">Montant à encaisser :</p>
       <p style="font-size: 32px; font-weight: 800; color: var(--color-accent);">${fmt(total)}</p>
     `;
-    $modalConfirm.onclick = () => { if (!isSubmittingOrder) confirmPayment(method); };
+    $modalConfirm.onclick = () => { if (!isSubmittingOrder) confirmPayment(method, null); };
   } else {
     $modalTitle.textContent = '💵 Paiement en espèces';
     $modalBody.innerHTML = `
@@ -274,7 +277,7 @@ function openPaymentModal(method) {
         $cashInput.focus();
         return;
       }
-      confirmPayment(method);
+      confirmPayment(method, given);
     };
 
     // Focus input after modal animation
@@ -282,16 +285,17 @@ function openPaymentModal(method) {
   }
 }
 
-async function confirmPayment(method) {
+async function confirmPayment(method, cashReceived) {
   isSubmittingOrder = true;
   $modalConfirm.disabled = true;
   $modalConfirm.classList.add('btn--loading');
 
   try {
-    const result = await submitOrder(method);
+    const result = await submitOrder(method, cashReceived);
     closeModal();
     showSuccess(result);
     clearCart();
+    if (result.print_warning) showToast(result.print_warning, 'error');
   } catch (err) {
     showToast(err.message || 'Impossible d\'enregistrer la commande. Le panier est conservé.');
     $modalConfirm.disabled = false;

@@ -1,18 +1,19 @@
 const express = require('express');
 const { getDb } = require('../db');
 const { requireAuth, requireManager } = require('../middleware/auth');
+const { printReceipt } = require('../printer');
 
 const router = express.Router();
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 // POST /api/orders — create a new order
-router.post('/', requireAuth, (req, res, next) => {
+router.post('/', requireAuth, async (req, res, next) => {
   try {
     if (!req.session.shiftId) {
       return res.status(400).json({ error: 'Ouvrez votre caisse avant d\'encaisser une vente' });
     }
 
-    const { items, payment_method } = req.body || {};
+    const { items, payment_method, cash_received } = req.body || {};
     // items = [{ product_id, quantity }]
 
     if (!Array.isArray(items) || !items.length) {
@@ -28,6 +29,14 @@ router.post('/', requireAuth, (req, res, next) => {
       }
     }
 
+    let cashReceived = null;
+    if (payment_method === 'cash' && cash_received !== undefined) {
+      cashReceived = Number(cash_received);
+      if (!Number.isFinite(cashReceived) || cashReceived < 0) {
+        return res.status(400).json({ error: 'Montant reçu invalide' });
+      }
+    }
+
     const db = getDb();
 
     // Make sure the shift is still open (it may have been closed from
@@ -37,6 +46,8 @@ router.post('/', requireAuth, (req, res, next) => {
       req.session.shiftId = null;
       return res.status(400).json({ error: 'Votre caisse a été fermée. Ouvrez-en une nouvelle avant d\'encaisser.' });
     }
+
+    const cashier = db.prepare('SELECT name FROM cashiers WHERE id = ?').get(req.session.cashierId);
 
     // Look up current prices and compute total
     const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
@@ -50,20 +61,23 @@ router.post('/', requireAuth, (req, res, next) => {
       }
       const unitPrice = product.price;
       total += unitPrice * item.quantity;
-      enrichedItems.push({ ...item, unit_price: unitPrice });
+      enrichedItems.push({ ...item, unit_price: unitPrice, name: product.name });
     }
 
     total = Math.round(total); // whole dinars
+    if (cashReceived !== null && cashReceived < total) {
+      return res.status(400).json({ error: 'Le montant reçu est inférieur au total' });
+    }
 
     const insertOrder = db.prepare(
-      'INSERT INTO orders (total, payment_method, cashier_id, shift_id) VALUES (?, ?, ?, ?)'
+      'INSERT INTO orders (total, payment_method, cashier_id, shift_id, cash_received) VALUES (?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)'
     );
 
     const createOrder = db.transaction(() => {
-      const orderInfo = insertOrder.run(total, payment_method, req.session.cashierId, req.session.shiftId);
+      const orderInfo = insertOrder.run(total, payment_method, req.session.cashierId, req.session.shiftId, cashReceived);
       const orderId = orderInfo.lastInsertRowid;
 
       for (const item of enrichedItems) {
@@ -75,7 +89,21 @@ router.post('/', requireAuth, (req, res, next) => {
 
     const orderId = createOrder();
 
-    res.status(201).json({ id: orderId, total, payment_method });
+    // Printing never blocks or fails the sale — the order is already saved.
+    const printResult = await printReceipt({
+      id: orderId,
+      createdAt: new Date().toISOString(),
+      cashierName: cashier ? cashier.name : 'Inconnu',
+      items: enrichedItems,
+      total,
+      paymentMethod: payment_method,
+      cashReceived,
+    });
+
+    const response = { id: orderId, total, payment_method };
+    if (!printResult.printed) response.print_warning = printResult.warning;
+
+    res.status(201).json(response);
   } catch (err) {
     next(err);
   }

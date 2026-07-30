@@ -53,6 +53,7 @@ function initTables() {
       payment_method TEXT    NOT NULL CHECK (payment_method IN ('cash','card')),
       cashier_id     INTEGER,
       shift_id       INTEGER,
+      cash_received  REAL,
       FOREIGN KEY (cashier_id) REFERENCES cashiers(id),
       FOREIGN KEY (shift_id)   REFERENCES shifts(id)
     );
@@ -80,6 +81,9 @@ function migrateOrdersTable() {
   }
   if (!columns.includes('shift_id')) {
     db.exec('ALTER TABLE orders ADD COLUMN shift_id INTEGER REFERENCES shifts(id)');
+  }
+  if (!columns.includes('cash_received')) {
+    db.exec('ALTER TABLE orders ADD COLUMN cash_received REAL');
   }
 }
 
